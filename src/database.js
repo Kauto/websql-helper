@@ -69,6 +69,8 @@ DB.prototype.run = async function (query, ...bindParameters) {
       tx.executeSql(query, bindParameters, function (tx, rs) {
         resolve(rs)
       }, function (tx, error) {
+        error.query = query
+        error.parameters = bindParameters
         reject(error)
       })
     })
@@ -90,6 +92,8 @@ DB.prototype.query = async function (query, ...bindParameters) {
       tx.executeSql(query, bindParameters, function (tx, rs) {
         resolve(Array.from({ length: rs.rows.length }, (v, i) => rs.rows.item(i)))
       }, function (tx, error) {
+        error.query = query
+        error.parameters = bindParameters
         reject(error)
       })
     })
@@ -111,6 +115,8 @@ DB.prototype.queryFirstRow = async function (query, ...bindParameters) {
       tx.executeSql(query, bindParameters, function (tx, rs) {
         resolve(rs.rows.length ? rs.rows.item(0) : null)
       }, function (tx, error) {
+        error.query = query
+        error.parameters = bindParameters
         reject(error)
       })
     })
@@ -134,6 +140,8 @@ DB.prototype.queryFirstRowObject = async function (query, ...bindParameters) {
       tx.executeSql(query, bindParameters, function (tx, rs) {
         resolve(rs.rows.length ? rs.rows.item(0) : {})
       }, function (tx, error) {
+        error.query = query
+        error.parameters = bindParameters
         reject(error)
       })
     })
@@ -156,6 +164,8 @@ DB.prototype.queryFirstCell = async function (query, ...bindParameters) {
         const keys = Object.keys(obj)
         resolve(keys.length ? obj[keys[0]] : undefined)
       }, function (tx, error) {
+        error.query = query
+        error.parameters = bindParameters
         reject(error)
       })
     })
@@ -177,6 +187,8 @@ DB.prototype.queryColumn = async function (column, query, ...bindParameters) {
       tx.executeSql(query, bindParameters, function (tx, rs) {
         resolve(Array.from({ length: rs.rows.length }, (v, i) => rs.rows.item(i)[column]))
       }, function (tx, error) {
+        error.query = query
+        error.parameters = bindParameters
         reject(error)
       })
     })
@@ -202,6 +214,8 @@ DB.prototype.queryKeyAndColumn = async function (key, column, query, ...bindPara
           return [item[key], item[column]]
         })))
       }, function (tx, error) {
+        error.query = query
+        error.parameters = bindParameters
         reject(error)
       })
     })
@@ -426,15 +440,20 @@ DB.prototype.migrate = async function ({ force = false, table = 'migrations', mi
   })
 
   // Create a database table for migrations meta data if it doesn't exist
+  let query = ''
+  let parameters = []
   await new Promise((resolve, reject) => {
     this.db.transaction((tx) => {
-      tx.executeSql(`CREATE TABLE IF NOT EXISTS "${table}" (
+      query = `CREATE TABLE IF NOT EXISTS "${table}" (
         id   INTEGER PRIMARY KEY,
         up   TEXT    NOT NULL,
         down TEXT    NOT NULL
-      )`, [], function (tx, rs) {
+      )`
+      tx.executeSql(query, [], function (tx, rs) {
         resolve(rs)
       }, function (tx, error) {
+        error.query = query
+        error.parameters = []
         reject(error)
       })
     })
@@ -443,9 +462,12 @@ DB.prototype.migrate = async function ({ force = false, table = 'migrations', mi
   // Get the list of already applied migrations
   const dbMigrations = await new Promise((resolve, reject) => {
     this.db.transaction((tx) => {
-      tx.executeSql(`SELECT id, up, down FROM "${table}" ORDER BY id ASC`, [], function (tx, rs) {
+      query = `SELECT id, up, down FROM "${table}" ORDER BY id ASC`
+      tx.executeSql(query, [], function (tx, rs) {
         resolve(Array.from({ length: rs.rows.length }, (v, i) => rs.rows.item(i)))
       }, function (tx, error) {
+        error.query = query
+        error.parameters = []
         reject(error)
       })
     })
@@ -459,11 +481,21 @@ DB.prototype.migrate = async function ({ force = false, table = 'migrations', mi
         (force && migration.id === lastMigration.id)) {
       await new Promise((resolve, reject) => {
         this.db.transaction((tx) => {
-          tx.executeSql(migration.down, [])
-          tx.executeSql(`DELETE FROM "${table}" WHERE id = ?`, [migration.id])
-        }, function (error) {
-          reject(error)
-        }, function () {
+          query = migration.down
+          parameters = []
+          tx.executeSql(query, [], () => {}, (tx, error) => {
+            error.query = query
+            error.parameters = parameters
+            reject(error)
+          })
+          query = `DELETE FROM "${table}" WHERE id = ?`
+          parameters = [migration.id]
+          tx.executeSql(query, parameters, () => {}, (tx, error) => {
+            error.query = query
+            error.parameters = parameters
+            reject(error)
+          })
+        }, () => {}, function () {
           resolve()
         })
       })
@@ -478,11 +510,21 @@ DB.prototype.migrate = async function ({ force = false, table = 'migrations', mi
     if (migration.id > lastMigrationId) {
       await new Promise((resolve, reject) => {
         this.db.transaction((tx) => {
-          tx.executeSql(migration.up, [])
-          tx.executeSql(`INSERT INTO "${table}" (id, up, down) VALUES (?, ?, ?)`, [migration.id, migration.up, migration.down])
-        }, function (error) {
-          reject(error)
-        }, function () {
+          query = migration.up
+          parameters = []
+          tx.executeSql(query, parameters, () => {}, (tx, error) => {
+            error.query = query
+            error.parameters = parameters
+            reject(error)
+          })
+          query = `INSERT INTO "${table}" (id, up, down) VALUES (?, ?, ?)`
+          parameters = [migration.id, migration.up, migration.down]
+          tx.executeSql(query, parameters, () => {}, (tx, error) => {
+            error.query = query
+            error.parameters = parameters
+            reject(error)
+          })
+        }, () => {}, function () {
           resolve()
         })
       })
