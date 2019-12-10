@@ -85,4 +85,14 @@ describe('Database Basics', function () {
     })
     expect(await db.queryFirstCell('SELECT `value` FROM Setting WHERE `key` = ?', 'test')).to.be.equal('now')
   })
+
+  it('should migrate files with force', async function () {
+    db = new DB({
+      db: openDatabase(':memory:', '1.0', 'description', 1),
+      migrate: { force: 'true', migrations: migrate }
+    })
+    await db.migrate()
+    await db.migrate()
+    expect(await db.queryFirstCell('SELECT `value` FROM Setting WHERE `key` = ?', 'test')).to.be.equal('now')
+  })
 })

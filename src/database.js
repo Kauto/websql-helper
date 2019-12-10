@@ -13,7 +13,7 @@ function DB (options = {}) {
     instance = instance || new DB(...arguments)
     return instance
   }
-  if (typeof (options) !== 'object') {
+  if (typeof options !== 'object') {
     throw new Error('parameter needs to be a WebSQL')
   }
   if (options && options.transaction) {
@@ -37,7 +37,13 @@ DB.prototype.connection = async function () {
     this.db = this.options.db
 
     if (this.options.migrate) {
-      await this.migrate(Array.isArray(this.options.migrate) ? { migrations: this.options.migrate } : (typeof this.options.migrate === 'object' ? this.options.migrate : {}))
+      await this.migrate(
+        Array.isArray(this.options.migrate)
+          ? { migrations: this.options.migrate }
+          : typeof this.options.migrate === 'object'
+            ? this.options.migrate
+            : {}
+      )
     }
 
     return this.db
@@ -65,14 +71,19 @@ DB.prototype.connection = async function () {
 DB.prototype.run = async function (query, ...bindParameters) {
   const db = await this.connection()
   return new Promise((resolve, reject) => {
-    db.transaction((tx) => {
-      tx.executeSql(query, bindParameters, function (tx, rs) {
-        resolve(rs)
-      }, function (tx, error) {
-        error.query = query
-        error.parameters = bindParameters
-        reject(error)
-      })
+    db.transaction(tx => {
+      tx.executeSql(
+        query,
+        bindParameters,
+        function (tx, rs) {
+          resolve(rs)
+        },
+        function (tx, error) {
+          error.query = query
+          error.parameters = bindParameters
+          reject(error)
+        }
+      )
     })
   })
 }
@@ -88,14 +99,21 @@ DB.prototype.run = async function (query, ...bindParameters) {
 DB.prototype.query = async function (query, ...bindParameters) {
   const db = await this.connection()
   return new Promise((resolve, reject) => {
-    db.readTransaction((tx) => {
-      tx.executeSql(query, bindParameters, function (tx, rs) {
-        resolve(Array.from({ length: rs.rows.length }, (v, i) => rs.rows.item(i)))
-      }, function (tx, error) {
-        error.query = query
-        error.parameters = bindParameters
-        reject(error)
-      })
+    db.readTransaction(tx => {
+      tx.executeSql(
+        query,
+        bindParameters,
+        function (tx, rs) {
+          resolve(
+            Array.from({ length: rs.rows.length }, (v, i) => rs.rows.item(i))
+          )
+        },
+        function (tx, error) {
+          error.query = query
+          error.parameters = bindParameters
+          reject(error)
+        }
+      )
     })
   })
 }
@@ -111,14 +129,19 @@ DB.prototype.query = async function (query, ...bindParameters) {
 DB.prototype.queryFirstRow = async function (query, ...bindParameters) {
   const db = await this.connection()
   return new Promise((resolve, reject) => {
-    db.readTransaction((tx) => {
-      tx.executeSql(query, bindParameters, function (tx, rs) {
-        resolve(rs.rows.length ? rs.rows.item(0) : null)
-      }, function (tx, error) {
-        error.query = query
-        error.parameters = bindParameters
-        reject(error)
-      })
+    db.readTransaction(tx => {
+      tx.executeSql(
+        query,
+        bindParameters,
+        function (tx, rs) {
+          resolve(rs.rows.length ? rs.rows.item(0) : null)
+        },
+        function (tx, error) {
+          error.query = query
+          error.parameters = bindParameters
+          reject(error)
+        }
+      )
     })
   })
 }
@@ -136,14 +159,19 @@ DB.prototype.queryFirstRow = async function (query, ...bindParameters) {
 DB.prototype.queryFirstRowObject = async function (query, ...bindParameters) {
   const db = await this.connection()
   return new Promise((resolve, reject) => {
-    db.readTransaction((tx) => {
-      tx.executeSql(query, bindParameters, function (tx, rs) {
-        resolve(rs.rows.length ? rs.rows.item(0) : {})
-      }, function (tx, error) {
-        error.query = query
-        error.parameters = bindParameters
-        reject(error)
-      })
+    db.readTransaction(tx => {
+      tx.executeSql(
+        query,
+        bindParameters,
+        function (tx, rs) {
+          resolve(rs.rows.length ? rs.rows.item(0) : {})
+        },
+        function (tx, error) {
+          error.query = query
+          error.parameters = bindParameters
+          reject(error)
+        }
+      )
     })
   })
 }
@@ -158,16 +186,21 @@ DB.prototype.queryFirstRowObject = async function (query, ...bindParameters) {
 DB.prototype.queryFirstCell = async function (query, ...bindParameters) {
   const db = await this.connection()
   return new Promise((resolve, reject) => {
-    db.readTransaction((tx) => {
-      tx.executeSql(query, bindParameters, function (tx, rs) {
-        const obj = rs.rows.length ? rs.rows.item(0) : {}
-        const keys = Object.keys(obj)
-        resolve(keys.length ? obj[keys[0]] : undefined)
-      }, function (tx, error) {
-        error.query = query
-        error.parameters = bindParameters
-        reject(error)
-      })
+    db.readTransaction(tx => {
+      tx.executeSql(
+        query,
+        bindParameters,
+        function (tx, rs) {
+          const obj = rs.rows.length ? rs.rows.item(0) : {}
+          const keys = Object.keys(obj)
+          resolve(keys.length ? obj[keys[0]] : undefined)
+        },
+        function (tx, error) {
+          error.query = query
+          error.parameters = bindParameters
+          reject(error)
+        }
+      )
     })
   })
 }
@@ -183,14 +216,24 @@ DB.prototype.queryFirstCell = async function (query, ...bindParameters) {
 DB.prototype.queryColumn = async function (column, query, ...bindParameters) {
   const db = await this.connection()
   return new Promise((resolve, reject) => {
-    db.readTransaction((tx) => {
-      tx.executeSql(query, bindParameters, function (tx, rs) {
-        resolve(Array.from({ length: rs.rows.length }, (v, i) => rs.rows.item(i)[column]))
-      }, function (tx, error) {
-        error.query = query
-        error.parameters = bindParameters
-        reject(error)
-      })
+    db.readTransaction(tx => {
+      tx.executeSql(
+        query,
+        bindParameters,
+        function (tx, rs) {
+          resolve(
+            Array.from(
+              { length: rs.rows.length },
+              (v, i) => rs.rows.item(i)[column]
+            )
+          )
+        },
+        function (tx, error) {
+          error.query = query
+          error.parameters = bindParameters
+          reject(error)
+        }
+      )
     })
   })
 }
@@ -204,20 +247,34 @@ DB.prototype.queryColumn = async function (column, query, ...bindParameters) {
  * @param {any} bindParameters You can specify bind parameters @see https://github.com/JoshuaWise/better-sqlite3/wiki/API#binding-parameters
  * @returns {object}
  */
-DB.prototype.queryKeyAndColumn = async function (key, column, query, ...bindParameters) {
+DB.prototype.queryKeyAndColumn = async function (
+  key,
+  column,
+  query,
+  ...bindParameters
+) {
   const db = await this.connection()
   return new Promise((resolve, reject) => {
-    db.readTransaction((tx) => {
-      tx.executeSql(query, bindParameters, function (tx, rs) {
-        resolve(Object.fromEntries(Array.from({ length: rs.rows.length }, (v, i) => {
-          const item = rs.rows.item(i)
-          return [item[key], item[column]]
-        })))
-      }, function (tx, error) {
-        error.query = query
-        error.parameters = bindParameters
-        reject(error)
-      })
+    db.readTransaction(tx => {
+      tx.executeSql(
+        query,
+        bindParameters,
+        function (tx, rs) {
+          resolve(
+            Object.fromEntries(
+              Array.from({ length: rs.rows.length }, (v, i) => {
+                const item = rs.rows.item(i)
+                return [item[key], item[column]]
+              })
+            )
+          )
+        },
+        function (tx, error) {
+          error.query = query
+          error.parameters = bindParameters
+          reject(error)
+        }
+      )
     })
   })
 }
@@ -278,7 +335,9 @@ DB.prototype.update = async function (table, data, where, whiteList) {
       }
     }
     if (!whereStringBuilder.length) {
-      throw new Error('Where is not constructed for the update command of DB()')
+      throw new Error(
+        'Where is not constructed for the update command of DB()'
+      )
     }
     sql += whereStringBuilder.join(' AND ')
   } else {
@@ -286,10 +345,7 @@ DB.prototype.update = async function (table, data, where, whiteList) {
     parameter.push(where)
   }
 
-  return (await this.run(
-    sql,
-    ...parameter
-  )).rowsAffected
+  return (await this.run(sql, ...parameter)).rowsAffected
 }
 
 /**
@@ -301,8 +357,18 @@ DB.prototype.update = async function (table, data, where, whiteList) {
  * @param {undefined|Array} whiteBlackList optional List of columns that can not be updated with "data" (blacklist)
  * @returns {Integer}
  */
-DB.prototype.updateWithBlackList = async function (table, data, where, blackList) {
-  return this.update(table, data, where, await createWhiteListByBlackList.bind(this)(table, blackList))
+DB.prototype.updateWithBlackList = async function (
+  table,
+  data,
+  where,
+  blackList
+) {
+  return this.update(
+    table,
+    data,
+    where,
+    await createWhiteListByBlackList.bind(this)(table, blackList)
+  )
 }
 
 /**
@@ -314,9 +380,11 @@ DB.prototype.updateWithBlackList = async function (table, data, where, blackList
  * @returns {Integer} The ID of the last inserted row
  */
 DB.prototype.insert = async function (table, data, whiteList) {
-  return (await this.run(
-    ...createInsertOrReplaceStatement('INSERT', table, data, whiteList)
-  )).insertId
+  return (
+    await this.run(
+      ...createInsertOrReplaceStatement('INSERT', table, data, whiteList)
+    )
+  ).insertId
 }
 
 /**
@@ -328,7 +396,11 @@ DB.prototype.insert = async function (table, data, whiteList) {
  * @returns {Integer} The ID of the last inserted row
  */
 DB.prototype.insertWithBlackList = async function (table, data, blackList) {
-  return this.insert(table, data, await createWhiteListByBlackList.bind(this)(table, blackList))
+  return this.insert(
+    table,
+    data,
+    await createWhiteListByBlackList.bind(this)(table, blackList)
+  )
 }
 
 /**
@@ -340,9 +412,11 @@ DB.prototype.insertWithBlackList = async function (table, data, blackList) {
  * @returns {Integer} The number of replaced entries
  */
 DB.prototype.replace = async function (table, data, whiteList) {
-  return (await this.run(
-    ...createInsertOrReplaceStatement('REPLACE', table, data, whiteList)
-  )).rowsAffected
+  return (
+    await this.run(
+      ...createInsertOrReplaceStatement('REPLACE', table, data, whiteList)
+    )
+  ).rowsAffected
 }
 
 /**
@@ -354,17 +428,29 @@ DB.prototype.replace = async function (table, data, whiteList) {
  * @returns {Integer} The ID of the last replaced row
  */
 DB.prototype.replaceWithBlackList = async function (table, data, blackList) {
-  return this.replace(table, data, await createWhiteListByBlackList.bind(this)(table, blackList))
+  return this.replace(
+    table,
+    data,
+    await createWhiteListByBlackList.bind(this)(table, blackList)
+  )
 }
 
 DB.prototype.parseTable = function (table) {
   var s = table.sql.split(',')
-  s[0] = s[0].replace(new RegExp('create\\s+table\\s+`?' + table.name + '`?\\s*\\(', 'i'), '')
+  s[0] = s[0].replace(
+    new RegExp('create\\s+table\\s+`?' + table.name + '`?\\s*\\(', 'i'),
+    ''
+  )
   table.fields = s
     .filter(function (i) {
-      return (i.indexOf(')') === -1)
-    }).map(function (i) {
-      return i.trim().split(/\s/).shift().replace(/`/g, '')
+      return i.indexOf(')') === -1
+    })
+    .map(function (i) {
+      return i
+        .trim()
+        .split(/\s/)
+        .shift()
+        .replace(/`/g, '')
     })
   return table
 }
@@ -374,9 +460,16 @@ async function createWhiteListByBlackList (table, blackList) {
   if (Array.isArray(blackList)) {
     // get all avaible columns
     try {
-      whiteList = await this.queryColumn('name', `PRAGMA table_info('${table}')`)
+      whiteList = await this.queryColumn(
+        'name',
+        `PRAGMA table_info('${table}')`
+      )
     } catch (e) {
-      whiteList = this.parseTable(await this.queryFirstRowObject(`SELECT * FROM sqlite_master WHERE tbl_name = '${table}'`)).fields
+      whiteList = this.parseTable(
+        await this.queryFirstRowObject(
+          `SELECT * FROM sqlite_master WHERE tbl_name = '${table}'`
+        )
+      ).fields
     }
     // get only those not in the whiteBlackList
     whiteList = whiteList.filter(v => !blackList.includes(v))
@@ -384,9 +477,16 @@ async function createWhiteListByBlackList (table, blackList) {
   return whiteList
 }
 
-function createInsertOrReplaceStatement (insertOrReplace, table, data, whiteList) {
+function createInsertOrReplaceStatement (
+  insertOrReplace,
+  table,
+  data,
+  whiteList
+) {
   if (!table) {
-    throw new Error(`Table is missing for the ${insertOrReplace} command of DB()`)
+    throw new Error(
+      `Table is missing for the ${insertOrReplace} command of DB()`
+    )
   }
   if (!Array.isArray(data)) {
     data = [data]
@@ -403,7 +503,13 @@ function createInsertOrReplaceStatement (insertOrReplace, table, data, whiteList
 
   const sql = data.reduce((sql, rowData, index) => {
     fields.forEach(field => parameter.push(rowData[field]))
-    return sql + (index ? ',' : '') + '(' + Array.from({ length: fields.length }, () => '?').join(',') + ')'
+    return (
+      sql +
+      (index ? ',' : '') +
+      '(' +
+      Array.from({ length: fields.length }, () => '?').join(',') +
+      ')'
+    )
   }, `${insertOrReplace} INTO \`${table}\` (\`${fields.join('`,`')}\`) VALUES `)
   return [sql, ...parameter]
 }
@@ -411,11 +517,17 @@ function createInsertOrReplaceStatement (insertOrReplace, table, data, whiteList
 /**
  * Migrates database schema to the latest version
  */
-DB.prototype.migrate = async function ({ force = false, table = 'migrations', migrations = [] } = {}) {
+DB.prototype.migrate = async function ({
+  force = false,
+  table = 'Migrations',
+  migrations = []
+} = {}) {
   if (!this.options.migrate) {
     // We don't call `connection` if `options.migrate` is `true`, because in this case `connection` will call `migrate`
     // which would lead into a dead-lock.
     await this.connection()
+  } else if (!this.db) {
+    return this.connection()
   }
 
   if (!migrations.length) {
@@ -423,11 +535,28 @@ DB.prototype.migrate = async function ({ force = false, table = 'migrations', mi
     return
   }
 
+  const regSemWithoutQuotes = /([^"';]*(('[^']*')*||("[^"]*")*))+/gm
+  const txExec = (tx, query, parameters) =>
+    new Promise((resolve, reject) => {
+      tx.executeSql(
+        query,
+        parameters,
+        (tx, result) => {
+          resolve(result)
+        },
+        (tx, error) => {
+          error.query = query
+          error.parameters = parameters
+          reject(error)
+        }
+      )
+    })
+
   // Ge the list of migrations, for example:
   //   { id: 1, name: 'initial', filename: '001-initial.sql', up: ..., down: ... }
   //   { id: 2, name: 'feature', fielname: '002-feature.sql', up: ..., down: ... }
   migrations = migrations.map((migration, index) => {
-    const [up, down] = migration.split(/^--\s+?down\b/mi)
+    const [up, down] = migration.split(/^--\s+?down\b/im)
     if (!down) {
       const message = `${index} entry does not contain '-- Down' separator.`
       throw new Error(message)
@@ -440,93 +569,105 @@ DB.prototype.migrate = async function ({ force = false, table = 'migrations', mi
   })
 
   // Create a database table for migrations meta data if it doesn't exist
-  let query = ''
-  let parameters = []
   await new Promise((resolve, reject) => {
-    this.db.transaction((tx) => {
-      query = `CREATE TABLE IF NOT EXISTS "${table}" (
+    this.db.transaction(tx => {
+      const query = `CREATE TABLE IF NOT EXISTS \`${table}\` (
         id   INTEGER PRIMARY KEY,
         up   TEXT    NOT NULL,
         down TEXT    NOT NULL
       )`
-      tx.executeSql(query, [], function (tx, rs) {
-        resolve(rs)
-      }, function (tx, error) {
-        error.query = query
-        error.parameters = []
-        reject(error)
-      })
+      tx.executeSql(
+        query,
+        [],
+        function (tx, rs) {
+          resolve(rs)
+        },
+        function (tx, error) {
+          error.query = query
+          error.parameters = []
+          reject(error)
+        }
+      )
     })
   })
 
   // Get the list of already applied migrations
   const dbMigrations = await new Promise((resolve, reject) => {
-    this.db.transaction((tx) => {
-      query = `SELECT id, up, down FROM "${table}" ORDER BY id ASC`
-      tx.executeSql(query, [], function (tx, rs) {
-        resolve(Array.from({ length: rs.rows.length }, (v, i) => rs.rows.item(i)))
-      }, function (tx, error) {
-        error.query = query
-        error.parameters = []
-        reject(error)
-      })
+    this.db.transaction(async tx => {
+      const rs = await txExec(
+        tx,
+        `SELECT id, up, down FROM \`${table}\` ORDER BY id ASC`,
+        []
+      )
+      resolve(
+        Array.from({ length: rs.rows.length }, (v, i) => rs.rows.item(i))
+      )
     })
   })
 
   // Undo migrations that exist only in the database but not in files,
   // also undo the last migration if the `force` option was set.
   const lastMigration = migrations[migrations.length - 1]
-  for (const migration of dbMigrations.slice().sort((a, b) => Math.sign(b.id - a.id))) {
-    if (!migrations.some(x => x.id === migration.id) ||
-        (force && migration.id === lastMigration.id)) {
+  for (const migration of dbMigrations
+    .slice()
+    .sort((a, b) => Math.sign(b.id - a.id))) {
+    if (
+      !migrations.some(x => x.id === migration.id) ||
+      (force && migration.id === lastMigration.id)
+    ) {
       await new Promise((resolve, reject) => {
-        this.db.transaction((tx) => {
-          query = migration.down
-          parameters = []
-          tx.executeSql(query, [], () => {}, (tx, error) => {
-            error.query = query
-            error.parameters = parameters
-            reject(error)
-          })
-          query = `DELETE FROM "${table}" WHERE id = ?`
-          parameters = [migration.id]
-          tx.executeSql(query, parameters, () => {}, (tx, error) => {
-            error.query = query
-            error.parameters = parameters
-            reject(error)
-          })
-        }, () => {}, function () {
-          resolve()
-        })
+        this.db.transaction(
+          async tx => {
+            const query = migration.down.match(regSemWithoutQuotes)
+            for (let x = 0; x < query.length; x++) {
+              const q = query[x].trim()
+              if (q.length) {
+                txExec(tx, q, [])
+              }
+            }
+
+            txExec(tx, `DELETE FROM ${table} WHERE id = ?`, [
+              migration.id
+            ])
+          },
+          () => {},
+          () => { resolve() }
+        )
       })
+      dbMigrations.length--
     } else {
       break
     }
   }
 
   // Apply pending migrations
-  const lastMigrationId = dbMigrations.length ? dbMigrations[dbMigrations.length - 1].id : -1
+  const lastMigrationId = dbMigrations.length
+    ? dbMigrations[dbMigrations.length - 1].id
+    : -1
   for (const migration of migrations) {
     if (migration.id > lastMigrationId) {
       await new Promise((resolve, reject) => {
-        this.db.transaction((tx) => {
-          query = migration.up
-          parameters = []
-          tx.executeSql(query, parameters, () => {}, (tx, error) => {
-            error.query = query
-            error.parameters = parameters
+        this.db.transaction(
+          async tx => {
+            const query = migration.up.match(regSemWithoutQuotes)
+            for (let x = 0; x < query.length; x++) {
+              const q = query[x].trim()
+              if (q.length) {
+                txExec(tx, q, [])
+              }
+            }
+
+            txExec(
+              tx,
+              `INSERT INTO ${table} (id, up, down) VALUES (?, ?, ?)`,
+              [migration.id, migration.up, migration.down]
+            )
+          },
+          (error) => {
             reject(error)
-          })
-          query = `INSERT INTO "${table}" (id, up, down) VALUES (?, ?, ?)`
-          parameters = [migration.id, migration.up, migration.down]
-          tx.executeSql(query, parameters, () => {}, (tx, error) => {
-            error.query = query
-            error.parameters = parameters
-            reject(error)
-          })
-        }, () => {}, function () {
-          resolve()
-        })
+          },
+          () => { resolve() }
+        )
       })
     }
   }
