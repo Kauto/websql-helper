@@ -24,6 +24,15 @@ function DB (options = {}) {
   if (!this.options.db) {
     throw new Error('db parameter is missing')
   }
+  if (this.options.logger === undefined) {
+    this.options.logger = console.log
+  }
+  if (this.options.verbose === undefined) {
+    this.options.verbose = process.env.NODE_ENV === 'development'
+  }
+  if (!this.options.verbose) {
+    this.options.logger = () => {}
+  }
   this.awaitLock = new AwaitLock()
 }
 
@@ -72,6 +81,7 @@ DB.prototype.run = async function (query, ...bindParameters) {
   const db = await this.connection()
   return new Promise((resolve, reject) => {
     db.transaction(tx => {
+      this.options.logger('run', query, ...bindParameters)
       tx.executeSql(
         query,
         bindParameters,
@@ -100,6 +110,7 @@ DB.prototype.query = async function (query, ...bindParameters) {
   const db = await this.connection()
   return new Promise((resolve, reject) => {
     db.readTransaction(tx => {
+      this.options.logger('query', query, ...bindParameters)
       tx.executeSql(
         query,
         bindParameters,
@@ -130,6 +141,7 @@ DB.prototype.queryFirstRow = async function (query, ...bindParameters) {
   const db = await this.connection()
   return new Promise((resolve, reject) => {
     db.readTransaction(tx => {
+      this.options.logger('queryFirstRow', query, ...bindParameters)
       tx.executeSql(
         query,
         bindParameters,
@@ -160,6 +172,7 @@ DB.prototype.queryFirstRowObject = async function (query, ...bindParameters) {
   const db = await this.connection()
   return new Promise((resolve, reject) => {
     db.readTransaction(tx => {
+      this.options.logger('queryFirstRowObject', query, ...bindParameters)
       tx.executeSql(
         query,
         bindParameters,
@@ -187,6 +200,7 @@ DB.prototype.queryFirstCell = async function (query, ...bindParameters) {
   const db = await this.connection()
   return new Promise((resolve, reject) => {
     db.readTransaction(tx => {
+      this.options.logger('queryFirstCell', query, ...bindParameters)
       tx.executeSql(
         query,
         bindParameters,
@@ -217,6 +231,7 @@ DB.prototype.queryColumn = async function (column, query, ...bindParameters) {
   const db = await this.connection()
   return new Promise((resolve, reject) => {
     db.readTransaction(tx => {
+      this.options.logger('queryColumn', column, query, ...bindParameters)
       tx.executeSql(
         query,
         bindParameters,
@@ -256,6 +271,7 @@ DB.prototype.queryKeyAndColumn = async function (
   const db = await this.connection()
   return new Promise((resolve, reject) => {
     db.readTransaction(tx => {
+      this.options.logger('queryKeyAndColumn', key, column, query, ...bindParameters)
       tx.executeSql(
         query,
         bindParameters,
@@ -538,6 +554,7 @@ DB.prototype.migrate = async function ({
   const regSemWithoutQuotes = /([^"';]*(('[^']*')*||("[^"]*")*))+/gm
   const txExec = (tx, query, parameters) =>
     new Promise((resolve, reject) => {
+      this.options.logger('migrationExec', query, ...parameters)
       tx.executeSql(
         query,
         parameters,
@@ -576,6 +593,7 @@ DB.prototype.migrate = async function ({
         up   TEXT    NOT NULL,
         down TEXT    NOT NULL
       )`
+      this.options.logger('migrationExec', query)
       tx.executeSql(
         query,
         [],
